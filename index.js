@@ -44,6 +44,15 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/search/:search', async(req, res)=>{
+      const search = req.params.search;
+      let query = {
+        foodname: { $regex: req.params.search, $options: 'i' },
+      };
+      const result = await foodsCollection.find(query).toArray();
+      res.send(result);
+    })
+
     app.post('/items', async(req, res)=>{
       const item = req.body;
       const result = await foodsCollection.insertOne(item);
