@@ -52,7 +52,7 @@ async function run() {
       const result = await foodsCollection.find(query).toArray();
       res.send(result);
     })
-
+  
     app.post('/items', async(req, res)=>{
       const item = req.body;
       const result = await foodsCollection.insertOne(item);
