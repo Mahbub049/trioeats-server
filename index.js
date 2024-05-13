@@ -50,6 +50,11 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/purchases/:email', async(req, res)=>{
+      const result = await purchaseCollection.find({email:req.params.email}).toArray();
+      res.send(result);
+    })
+
     app.get('/search/:search', async(req, res)=>{
       let query = {
         foodname: { $regex: req.params.search, $options: 'i' },
