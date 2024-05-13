@@ -26,9 +26,15 @@ async function run() {
     await client.connect();
 
     const foodsCollection = client.db('trioEats').collection("foods");
+    const purchaseCollection = client.db('trioEats').collection("purchase");
 
     app.get('/items', async(req, res)=>{
       const result = await foodsCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.get('/purchase', async(req, res)=>{
+      const result = await purchaseCollection.find().toArray();
       res.send(result);
     })
 
@@ -45,7 +51,6 @@ async function run() {
     })
 
     app.get('/search/:search', async(req, res)=>{
-      const search = req.params.search;
       let query = {
         foodname: { $regex: req.params.search, $options: 'i' },
       };
@@ -56,6 +61,12 @@ async function run() {
     app.post('/items', async(req, res)=>{
       const item = req.body;
       const result = await foodsCollection.insertOne(item);
+      res.send(result);
+    })
+
+    app.post('/purchase', async(req, res)=>{
+      const item = req.body;
+      const result = await purchaseCollection.insertOne(item);
       res.send(result);
     })
 
