@@ -72,6 +72,12 @@ async function run() {
     app.post('/purchase', async(req, res)=>{
       const item = req.body;
       const result = await purchaseCollection.insertOne(item);
+      const updateDoc = {
+        $inc: { purchaseCount: 1 },
+      }
+      const foodQuery = { _id: new ObjectId(item.foodId) }
+      const updatefoodCount = await foodsCollection.updateOne(foodQuery, updateDoc);
+      console.log(updatefoodCount)
       res.send(result);
     })
 
