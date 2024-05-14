@@ -9,7 +9,9 @@ const port = process.env.PORT || 5000;
 
 app.use(cors({
   origin: [
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'trioeats-8ebfe.web.app',
+    'trioeats-8ebfe.firebaseapp.com'
   ],
   credentials: true,
   optionSuccessStatus: 200
@@ -32,6 +34,12 @@ const verifyToken = (req, res, next) =>{
   })
 }
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+};
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.h0zb1dz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -46,8 +54,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
+    const usersCollection = client.db('trioEats').collection("users");
     const foodsCollection = client.db('trioEats').collection("foods");
     const purchaseCollection = client.db('trioEats').collection("purchase");
     const galleryCollection = client.db('trioEats').collection("gallery");
@@ -55,6 +64,11 @@ async function run() {
 
     app.get('/items', async(req, res)=>{
       const result = await foodsCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.get('/register', async(req, res)=>{
+      const result = await usersCollection.find().toArray();
       res.send(result);
     })
 
@@ -74,11 +88,10 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/items/:id', verifyToken, async(req, res)=>{
+    app.get('/items/:id', async(req, res)=>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
       const result = await foodsCollection.findOne(query);
-      console.log(result);
       res.send(result);
     })
 
@@ -111,16 +124,12 @@ async function run() {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1hr'});
       res
-      .cookie('token',token,{
-        httpOnly:true,
-        secure:process.env.NODE_ENV==='production',
-        sameSite:process.env.NODE_ENV==='production'?'none':'strict',
-        })
+      .cookie('token',token,cookieOptions)
       .send({success: true});
     })
 
     app.post('/logout', async(req, res)=>{
-      res.clearCookie('token', {maxAge: 0}).send({success: true})
+      res.clearCookie('token', {...cookieOptions, maxAge: 0}).send({success: true})
     })
   
     app.post('/items', async(req, res)=>{
@@ -132,6 +141,12 @@ async function run() {
     app.post('/reservations', async(req, res)=>{
       const item = req.body;
       const result = await reservationsCollection.insertOne(item);
+      res.send(result);
+    })
+
+    app.post('/register', async(req, res)=>{
+      const item = req.body;
+      const result = await usersCollection.insertOne(item);
       res.send(result);
     })
 
@@ -182,7 +197,7 @@ async function run() {
     })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
