@@ -2,7 +2,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-require('dotenv').config()
+require('dotenv').config();
+const cookieParser = require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -13,6 +14,12 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
+
+const logger = (req, res, next) =>{
+  console.log(req.method);
+  next();
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.h0zb1dz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -44,7 +51,6 @@ async function run() {
     app.get('/topfoods', async(req, res)=>{
       const cursor = foodsCollection.find().sort({"purchaseCount":-1});
       const result = await cursor.toArray();
-      console.log(result);
       res.send(result);
     })
 
@@ -70,7 +76,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/purchases/:email', async(req, res)=>{
+    app.get('/purchases/:email', logger, async(req, res)=>{
       const result = await purchaseCollection.find({email:req.params.email}).toArray();
       res.send(result);
     })
@@ -86,6 +92,7 @@ async function run() {
     //JWT
     app.post('/jwt', async(req, res)=>{
       const user = req.body;
+      console.log(req.cookies)
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1hr'});
       res
       .cookie('token',token,{
@@ -126,7 +133,6 @@ async function run() {
       }
       const foodQuery = { _id: new ObjectId(item.foodId) }
       const updatefoodCount = await foodsCollection.updateOne(foodQuery, updateDoc);
-      console.log(updatefoodCount)
       res.send(result);
     })
 
