@@ -34,6 +34,13 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/topfoods', async(req, res)=>{
+      const cursor = foodsCollection.find().sort({"purchaseCount":-1});
+      const result = await cursor.toArray();
+      console.log(result);
+      res.send(result);
+    })
+
     app.get('/purchase', async(req, res)=>{
       const result = await purchaseCollection.find().toArray();
       res.send(result);
