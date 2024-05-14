@@ -11,16 +11,26 @@ app.use(cors({
   origin: [
     'http://localhost:5173'
   ],
-  credentials: true
+  credentials: true,
+  optionSuccessStatus: 200
 }));
 app.use(express.json());
 app.use(cookieParser());
 
-const logger = (req, res, next) =>{
-  console.log(req.method);
-  next();
-}
 
+const verifyToken = (req, res, next) =>{
+  const token = req.cookies?.token;
+  if(!token){
+    return res.status(401).send({message: 'unauthorized access'})
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+    if(err){
+      return res.status(401).send({message: 'unauthorized access'})
+    }
+    req.user=decoded;
+    next();
+  })
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.h0zb1dz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -64,19 +74,26 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/items/:id', async(req, res)=>{
+    app.get('/items/:id', verifyToken, async(req, res)=>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
       const result = await foodsCollection.findOne(query);
+      console.log(result);
       res.send(result);
     })
 
-    app.get('/foods/:email', async(req, res)=>{
+    app.get('/foods/:email', verifyToken, async(req, res)=>{
+      if(req.user.email !== req.params.email){
+        return res.status(403).send({message: 'forbidden access'})
+      }
       const result = await foodsCollection.find({email:req.params.email}).toArray();
       res.send(result);
     })
 
-    app.get('/purchases/:email', logger, async(req, res)=>{
+    app.get('/purchases/:email', verifyToken, async(req, res)=>{
+      if(req.user.email !== req.params.email){
+        return res.status(403).send({message: 'forbidden access'})
+      }
       const result = await purchaseCollection.find({email:req.params.email}).toArray();
       res.send(result);
     })
@@ -92,14 +109,13 @@ async function run() {
     //JWT
     app.post('/jwt', async(req, res)=>{
       const user = req.body;
-      console.log(req.cookies)
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1hr'});
       res
       .cookie('token',token,{
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none'
-      })
+        httpOnly:true,
+        secure:process.env.NODE_ENV==='production',
+        sameSite:process.env.NODE_ENV==='production'?'none':'strict',
+        })
       .send({success: true});
     })
 
