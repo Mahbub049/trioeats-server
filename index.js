@@ -10,11 +10,11 @@ const port = process.env.PORT || 5000;
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'trioeats-8ebfe.web.app',
-    'trioeats-8ebfe.firebaseapp.com'
+    'https://trioeats-8ebfe.web.app',
+    'https://trioeats-8ebfe.firebaseapp.com'
   ],
   credentials: true,
-  optionSuccessStatus: 200
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 }));
 app.use(express.json());
 app.use(cookieParser());
