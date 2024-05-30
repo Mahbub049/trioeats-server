@@ -61,9 +61,15 @@ async function run() {
     const purchaseCollection = client.db('trioEats').collection("purchase");
     const galleryCollection = client.db('trioEats').collection("gallery");
     const reservationsCollection = client.db('trioEats').collection("reservations");
+    const reviewCollection = client.db("trioEats").collection("reviews");
 
     app.get('/items', async(req, res)=>{
       const result = await foodsCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.get('/reviews', async (req, res) => {
+      const result = await reviewCollection.find().toArray();
       res.send(result);
     })
 
